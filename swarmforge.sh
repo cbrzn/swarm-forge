@@ -185,7 +185,7 @@ parse_config() {
     fi
 
     case "$agent" in
-      claude|codex|none) ;;
+      claude|codex|opencode|none) ;;
       *)
         echo -e "${RED}Error:${RESET} Unsupported agent '$agent' for role '$role'"
         exit 1
@@ -345,6 +345,7 @@ check_backend_dependencies() {
     case "${AGENTS[$i]}" in
       claude) check_dependency claude ;;
       codex) check_dependency codex ;;
+      opencode) check_dependency opencode ;;
     esac
   done
 }
@@ -397,6 +398,9 @@ launch_role() {
     codex)
       launch_cmd="export PATH='$SWARM_TOOLS_DIR:$SCRIPT_DIR':\$PATH && cd '$role_worktree' && codex -C '$role_worktree' \"\$(cat '$prompt_file')\""
       ;;
+    opencode)
+      launch_cmd="export PATH='$SWARM_TOOLS_DIR:$SCRIPT_DIR':\$PATH && cd '$role_worktree' && opencode '$role_worktree' --prompt \"\$(cat '$prompt_file')\""
+      ;;
   esac
 
   if [[ "$index" -eq "${CLEANUP_OWNER_INDEX}" ]]; then
@@ -406,7 +410,7 @@ launch_role() {
       [[ -n "$session_name" ]] || continue
       launch_cmd+=" '$session_name'"
     done
-    launch_cmd+=" >/dev/null 2>&1 &!; exit \$exit_code"
+    launch_cmd+=" >/dev/null 2>&1 & disown; exit \$exit_code"
   fi
 
   tmux send-keys -t "${session}:${display}.0" "$launch_cmd" Enter
